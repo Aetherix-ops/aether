@@ -1,0 +1,22 @@
+{
+  "_comment": "Copy this to config.json and fill in your values",
+
+  "phoneNumber": "628xxxxxxxxxx",
+  "prefix": "!",
+  "ownerNumber": "628xxxxxxxxxx",
+  "botName": "Aether",
+
+  "pterodactyl": {
+    "enabled": false,
+    "panelUrl": "https://panel.yourdomain.com",
+    "apiKey": "your_pterodactyl_client_api_key"
+  },
+
+  "features": {
+    "autoReply": false,
+    "welcomeMessage": false,
+    "antiLink": false,
+    "aiEnabled": false,
+    "openrouterKey": "your_openrouter_api_key"
+  }
+}
