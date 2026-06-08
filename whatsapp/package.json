@@ -1,0 +1,36 @@
+{
+  "name": "aether-wa",
+  "version": "1.0.0",
+  "description": "A powerful WhatsApp bot built with TypeScript + Baileys",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "typescript",
+    "pterodactyl"
+  ],
+  "author": "Aetherix-ops",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.0",
+    "axios": "^1.7.0",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/qrcode": "^1.5.5",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
