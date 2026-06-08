@@ -1,0 +1,38 @@
+# =============================================================
+#  aether-discord — config.example.toml
+#  Copy this to config.toml and fill in your values
+# =============================================================
+
+[discord]
+# Your Discord bot token (from Discord Developer Portal)
+token = "your_discord_bot_token_here"
+
+# Command prefix for text commands
+prefix = "!"
+
+# Your Discord user ID (for owner-only commands)
+owner_id = 123456789012345678
+
+# Channel ID for mod logs
+log_channel_id = 123456789012345678
+
+# Channel ID for welcome messages
+welcome_channel_id = 123456789012345678
+
+# Welcome message (%user% = mention, %server% = server name)
+welcome_message = "Welcome to %server%, %user%! 🎉"
+
+# =============================================================
+#  Pterodactyl Integration (optional)
+# =============================================================
+[pterodactyl]
+panel_url = "https://panel.yourdomain.com"
+api_key = "your_pterodactyl_client_api_key"
+
+# =============================================================
+#  Features Toggle
+# =============================================================
+[features]
+auto_mod = false
+welcome_enabled = true
+economy_enabled = false
