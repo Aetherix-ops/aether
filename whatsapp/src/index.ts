@@ -10,7 +10,6 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   WASocket,
-  BaileysEventMap,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import pino from "pino";
@@ -22,12 +21,10 @@ import { handleMessage } from "./handlers/message";
 import { logger } from "./utils/logger";
 
 const AUTH_DIR = path.join(process.cwd(), "session");
+let isReconnecting = false;
 
-async function startBot(): Promise<void> {
+async function connectToWhatsApp(): Promise<WASocket> {
   const config = loadConfig();
-
-  logger.info("Starting Aether WhatsApp Bot...");
-  logger.info(`Prefix: ${config.prefix}`);
 
   if (!fs.existsSync(AUTH_DIR)) {
     fs.mkdirSync(AUTH_DIR, { recursive: true });
@@ -37,7 +34,7 @@ async function startBot(): Promise<void> {
   const { version } = await fetchLatestBaileysVersion();
   logger.info(`Baileys version: ${version.join(".")}`);
 
-  const sock: WASocket = makeWASocket({
+  const sock = makeWASocket({
     version,
     auth: {
       creds: state.creds,
@@ -50,6 +47,7 @@ async function startBot(): Promise<void> {
     markOnlineOnConnect: false,
   });
 
+  // Pairing code (only if not registered)
   if (!sock.authState.creds.registered) {
     const phoneNumber = config.phoneNumber;
 
@@ -58,7 +56,8 @@ async function startBot(): Promise<void> {
       process.exit(1);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Small delay before requesting pairing code
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     try {
       const code = await sock.requestPairingCode(
@@ -70,34 +69,41 @@ async function startBot(): Promise<void> {
       console.log("╔══════════════════════════════════════╗");
       console.log("║       AETHER — PAIRING CODE          ║");
       console.log("╠══════════════════════════════════════╣");
-      console.log(`║                                      ║`);
       console.log(`║   Code: ${formatted.padEnd(28)}║`);
-      console.log(`║                                      ║`);
       console.log("╠══════════════════════════════════════╣");
       console.log("║  1. Open WhatsApp on your phone      ║");
-      console.log("║  2. Go to Linked Devices              ║");
-      console.log("║  3. Tap Link with phone number        ║");
-      console.log("║  4. Enter the code above              ║");
+      console.log("║  2. Go to Linked Devices             ║");
+      console.log("║  3. Tap Link with phone number       ║");
+      console.log("║  4. Enter the code above             ║");
       console.log("╚══════════════════════════════════════╝");
       console.log("\n");
     } catch (e) {
       logger.error("Failed to get pairing code:", e);
+      // Don't exit immediately - allow manual intervention
     }
   }
 
+  // Connection update handler
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
 
     if (connection === "close") {
       const reason = (lastDisconnect?.error as Boom)?.output?.statusCode;
-      const shouldReconnect = reason !== DisconnectReason.loggedOut;
+      const shouldReconnect =
+        reason !== DisconnectReason.loggedOut && !isReconnecting;
 
       logger.warn(`Connection closed. Reason: ${reason}`);
 
       if (shouldReconnect) {
-        logger.info("Reconnecting...");
-        setTimeout(() => startBot(), 5000);
-      } else {
+        isReconnecting = true;
+        logger.info("Reconnecting in 5 seconds...");
+        setTimeout(() => {
+          isReconnecting = false;
+          connectToWhatsApp().catch((err) => {
+            logger.error("Reconnect failed:", err);
+          });
+        }, 5000);
+      } else if (reason === DisconnectReason.loggedOut) {
         logger.error("Logged out. Delete session folder and restart.");
         fs.rmSync(AUTH_DIR, { recursive: true, force: true });
         process.exit(1);
@@ -107,6 +113,7 @@ async function startBot(): Promise<void> {
     if (connection === "open") {
       logger.info(`✅ Connected as ${sock.user?.name || sock.user?.id}`);
       logger.info(`Phone: ${sock.user?.id?.split(":")[0]}`);
+      isReconnecting = false;
     }
 
     if (connection === "connecting") {
@@ -126,9 +133,26 @@ async function startBot(): Promise<void> {
     }
   });
 
+  return sock;
+}
+
+async function startBot(): Promise<void> {
+  const config = loadConfig();
+  logger.info("Starting Aether WhatsApp Bot...");
+  logger.info(`Prefix: ${config.prefix}`);
+
+  try {
+    await connectToWhatsApp();
+  } catch (e) {
+    logger.error("Fatal error starting bot:", e);
+    process.exit(1);
+  }
+
+  // Graceful shutdown
   process.on("SIGINT", async () => {
     logger.info("Shutting down Aether...");
-    await sock.logout();
+    // Note: In a real implementation, you would store the socket reference
+    // and call logout if needed. For now we just exit cleanly.
     process.exit(0);
   });
 }
