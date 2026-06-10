@@ -58,5 +58,4 @@ export function loadConfig(): Config {
   }
 
   return defaultConfig;
-  }
-  
+}
