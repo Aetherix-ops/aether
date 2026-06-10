@@ -32,13 +32,13 @@ export async function handleMessage(
 
   const prefix = config.prefix;
 
-  // ── AUTO REPLY ─────────────────────────────────────────────
+  // ── AUTO REPLY ───────────────────────────────────
   if (config.features.autoReply && !text.startsWith(prefix)) {
     await handleAutoReply(sock, msg, text);
     return;
   }
 
-  // ── PREFIX COMMANDS ────────────────────────────────────────
+  // ── PREFIX COMMANDS ──────────────────────────────────
   if (!text.startsWith(prefix)) return;
 
   const [rawCmd, ...args] = text.slice(prefix.length).trim().split(/\s+/);
@@ -85,7 +85,7 @@ async function handleAutoReply(
   const lower = text.toLowerCase();
 
   const replies: Record<string, string> = {
-    "hi": "Hello! 👋 How can I help you?",
+    "hi": "Hello! 👋 How can you help you?",
     "hello": "Hey there! 👋",
     "halo": "Halo! 👋 Ada yang bisa dibantu?",
     "ping": "Pong! 🏓",
@@ -97,5 +97,4 @@ async function handleAutoReply(
       return;
     }
   }
-  }
-      
+}
